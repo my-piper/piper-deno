@@ -4,14 +4,14 @@ const BASE_URL = "http://127.0.0.1:3333";
 
 // Helper function to make requests
 async function postCode(
-  code: string,
+  script: string,
   fn: string,
   payload: Record<string, unknown>
 ) {
   const response = await fetch(BASE_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code, fn, payload }),
+    body: JSON.stringify({ script, fn, payload }),
   });
   return response;
 }
@@ -19,14 +19,14 @@ async function postCode(
 Deno.test({
   name: "server - normal code execution",
   async fn() {
-    const code = `
+    const script = `
       export function run(inputs) {
         console.log("Processing request");
         return { result: "success", input: inputs.value };
       }
     `;
 
-    const response = await postCode(code, "run", { value: 42 });
+    const response = await postCode(script, "run", { value: 42 });
     assertEquals(response.status, 200);
 
     const data = await response.json();
@@ -41,14 +41,14 @@ Deno.test({
 Deno.test({
   name: "server - infinite loop returns timeout error",
   async fn() {
-    const code = `
+    const script = `
       export function run(inputs) {
         while(true) {}
         return inputs;
       }
     `;
 
-    const response = await postCode(code, "run", { value: 42 });
+    const response = await postCode(script, "run", { value: 42 });
     assertEquals(response.status, 400);
 
     const data = await response.json();
@@ -90,13 +90,13 @@ Deno.test({
 Deno.test({
   name: "server - missing function in code",
   async fn() {
-    const code = `
+    const script = `
       export function wrongName(inputs) {
         return { result: "success" };
       }
     `;
 
-    const response = await postCode(code, "run", { value: 42 });
+    const response = await postCode(script, "run", { value: 42 });
     assertEquals(response.status, 400);
 
     const data = await response.json();
@@ -109,13 +109,13 @@ Deno.test({
 Deno.test({
   name: "server - code with syntax error",
   async fn() {
-    const code = `
+    const script = `
       export function run(inputs) {
         return { result: "success"  // Missing closing brace
       }
     `;
 
-    const response = await postCode(code, "run", { value: 42 });
+    const response = await postCode(script, "run", { value: 42 });
     assertEquals(response.status, 400);
 
     const data = await response.json();
@@ -128,13 +128,13 @@ Deno.test({
 Deno.test({
   name: "server - code with runtime error",
   async fn() {
-    const code = `
+    const script = `
       export function run(inputs) {
         throw new Error("Runtime error");
       }
     `;
 
-    const response = await postCode(code, "run", { value: 42 });
+    const response = await postCode(script, "run", { value: 42 });
     assertEquals(response.status, 400);
 
     const data = await response.json();
@@ -147,14 +147,14 @@ Deno.test({
 Deno.test({
   name: "server - async code execution",
   async fn() {
-    const code = `
+    const script = `
       export async function run(inputs) {
         await new Promise(resolve => setTimeout(resolve, 100));
         return { result: "async success" };
       }
     `;
 
-    const response = await postCode(code, "run", { value: 42 });
+    const response = await postCode(script, "run", { value: 42 });
     assertEquals(response.status, 200);
 
     const data = await response.json();
@@ -209,7 +209,7 @@ Deno.test({
 Deno.test({
   name: "server - custom timeout parameter",
   async fn() {
-    const code = `
+    const script = `
       export async function run(inputs) {
         await new Promise(resolve => setTimeout(resolve, 2000));
         return { result: "completed" };
@@ -221,7 +221,7 @@ Deno.test({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        code,
+        script,
         fn: "run",
         payload: {},
         timeout: 1000,
@@ -236,7 +236,7 @@ Deno.test({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        code,
+        script,
         fn: "run",
         payload: {},
         timeout: 3000,
@@ -253,7 +253,7 @@ Deno.test({
 Deno.test({
   name: "server - timeout defaults to 5 seconds",
   async fn() {
-    const code = `
+    const script = `
       export async function run(inputs) {
         await new Promise(resolve => setTimeout(resolve, 2000));
         return { result: "completed in 2s" };
@@ -261,7 +261,7 @@ Deno.test({
     `;
 
     // Should succeed because default is 5s
-    const response = await postCode(code, "run", {});
+    const response = await postCode(script, "run", {});
     assertEquals(response.status, 200);
 
     const data = await response.json();
@@ -274,7 +274,7 @@ Deno.test({
 Deno.test({
   name: "server - timeout max is 300 seconds",
   async fn() {
-    const code = `
+    const script = `
       export function run(inputs) {
         return { result: "quick" };
       }
@@ -285,7 +285,7 @@ Deno.test({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        code,
+        script,
         fn: "run",
         payload: {},
         timeout: 400000, // 400 seconds

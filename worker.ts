@@ -17,7 +17,7 @@ interface WorkerResponse {
 // Listen for messages from the main thread
 self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
   if (e.data.type === "execute") {
-    const { code, fn, payload } = e.data.data;
+    const { script, fn, payload } = e.data.data;
 
     const logs: Array<{ ts: number; level: LogLevel; message: string }> = [];
 
@@ -37,8 +37,8 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
     let blobUrl: string | null = null;
 
     try {
-      // Create a blob URL from the user code
-      const blob = new Blob([code], { type: "application/javascript" });
+      // Create a blob URL from the user script
+      const blob = new Blob([script], { type: "application/javascript" });
       blobUrl = URL.createObjectURL(blob);
 
       // Import the user's code

@@ -2,14 +2,14 @@ import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { execute } from "./executor.ts";
 
 Deno.test("concurrent execution - isolation test", async () => {
-  const normalCode1 = `
+  const normalScript1 = `
     export function run(inputs) {
       console.log("Normal user 1");
       return { user: 1, result: "success" };
     }
   `;
 
-  const hackerCode = `
+  const hackerScript = `
     export function run(inputs) {
       console.log("Hacker attack!");
       while(true) {
@@ -19,7 +19,7 @@ Deno.test("concurrent execution - isolation test", async () => {
     }
   `;
 
-  const normalCode2 = `
+  const normalScript2 = `
     export function run(inputs) {
       console.log("Normal user 2");
       return { user: 2, result: "success" };
@@ -29,9 +29,9 @@ Deno.test("concurrent execution - isolation test", async () => {
   // Execute all 3 requests concurrently
   const startTime = Date.now();
   const results = await Promise.allSettled([
-    execute({ code: normalCode1, fn: "run", payload: { user: 1 } }),
-    execute({ code: hackerCode, fn: "run", payload: { user: "hacker" } }),
-    execute({ code: normalCode2, fn: "run", payload: { user: 2 } }),
+    execute({ script: normalScript1, fn: "run", payload: { user: 1 } }),
+    execute({ script: hackerScript, fn: "run", payload: { user: "hacker" } }),
+    execute({ script: normalScript2, fn: "run", payload: { user: 2 } }),
   ]);
   const duration = Date.now() - startTime;
 
@@ -75,7 +75,7 @@ Deno.test("concurrent execution - isolation test", async () => {
 });
 
 Deno.test("concurrent execution - multiple normal requests", async () => {
-  const code = `
+  const script = `
     export async function run(inputs) {
       console.log("Processing request " + inputs.id);
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -86,11 +86,11 @@ Deno.test("concurrent execution - multiple normal requests", async () => {
   // Execute 5 concurrent requests
   const startTime = Date.now();
   const results = await Promise.all([
-    execute({ code, fn: "run", payload: { id: 1 } }),
-    execute({ code, fn: "run", payload: { id: 2 } }),
-    execute({ code, fn: "run", payload: { id: 3 } }),
-    execute({ code, fn: "run", payload: { id: 4 } }),
-    execute({ code, fn: "run", payload: { id: 5 } }),
+    execute({ script, fn: "run", payload: { id: 1 } }),
+    execute({ script, fn: "run", payload: { id: 2 } }),
+    execute({ script, fn: "run", payload: { id: 3 } }),
+    execute({ script, fn: "run", payload: { id: 4 } }),
+    execute({ script, fn: "run", payload: { id: 5 } }),
   ]);
   const duration = Date.now() - startTime;
 
@@ -112,13 +112,13 @@ Deno.test("concurrent execution - multiple normal requests", async () => {
 });
 
 Deno.test("concurrent execution - mixed fast and slow requests", async () => {
-  const fastCode = `
+  const fastScript = `
     export function run(inputs) {
       return { type: "fast", result: "done" };
     }
   `;
 
-  const slowCode = `
+  const slowScript = `
     export async function run(inputs) {
       await new Promise(resolve => setTimeout(resolve, 500));
       return { type: "slow", result: "done" };
@@ -127,9 +127,9 @@ Deno.test("concurrent execution - mixed fast and slow requests", async () => {
 
   const startTime = Date.now();
   const results = await Promise.allSettled([
-    execute({ code: fastCode, fn: "run", payload: {} }),
-    execute({ code: slowCode, fn: "run", payload: {} }),
-    execute({ code: fastCode, fn: "run", payload: {} }),
+    execute({ script: fastScript, fn: "run", payload: {} }),
+    execute({ script: slowScript, fn: "run", payload: {} }),
+    execute({ script: fastScript, fn: "run", payload: {} }),
   ]);
   const duration = Date.now() - startTime;
 
