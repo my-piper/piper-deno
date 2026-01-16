@@ -43,10 +43,16 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-                                                                 type=raw,value=latest,enable={{is_d  ault_branch}}
+            type=sha,prefix={{branch}}-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push Docker im      - name: es      - nameld-push-action@      - name: Build        context: .
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
           push: true
-          tags: ${{ steps.me    ut          tags:        labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
