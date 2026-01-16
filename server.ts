@@ -1,5 +1,5 @@
 import { Request, serve } from "https://deno.land/std/http/server.ts";
-import { execute } from "./executor.ts";
+import { execute, ExecutionError } from "./executor.ts";
 import { RunCodeSchema } from "./model/run-code.ts";
 
 serve(
@@ -15,11 +15,23 @@ serve(
       const { result, logs } = await execute(parsed);
       return Response.json({ result, logs });
     } catch (e: any) {
+      // If it's an ExecutionError (user code error), return 422 with stack trace and logs
+      if (e instanceof ExecutionError) {
+        return Response.json(
+          {
+            message: e.message,
+            stack: e.stack,
+            logs: e.logs,
+          },
+          { status: 422 },
+        );
+      }
+      // For other errors (validation, timeout, etc.), return 400
       return Response.json({ error: e.message }, { status: 400 });
     }
   },
   {
     hostname: "0.0.0.0",
-    port: process.env["PORT"] ? parseInt(process.env["PORT"]) : 3333,
-  }
+    port: +process.env["PORT"] || 3333,
+  },
 );

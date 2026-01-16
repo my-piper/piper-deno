@@ -6,7 +6,7 @@ const BASE_URL = "http://127.0.0.1:3333";
 async function postCode(
   script: string,
   fn: string,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
 ) {
   const response = await fetch(BASE_URL, {
     method: "POST",
@@ -97,10 +97,12 @@ Deno.test({
     `;
 
     const response = await postCode(script, "run", { value: 42 });
-    assertEquals(response.status, 400);
+    assertEquals(response.status, 422);
 
     const data = await response.json();
-    assertEquals(data.error, "Code must export function run");
+    assertEquals(data.message, "Code must export function run");
+    assertEquals(typeof data.stack, "string");
+    assertEquals(Array.isArray(data.logs), true);
   },
   sanitizeResources: false,
   sanitizeOps: false,
@@ -116,10 +118,12 @@ Deno.test({
     `;
 
     const response = await postCode(script, "run", { value: 42 });
-    assertEquals(response.status, 400);
+    assertEquals(response.status, 422);
 
     const data = await response.json();
-    assertEquals(typeof data.error, "string");
+    assertEquals(typeof data.message, "string");
+    assertEquals(typeof data.stack, "string");
+    assertEquals(Array.isArray(data.logs), true);
   },
   sanitizeResources: false,
   sanitizeOps: false,
@@ -135,10 +139,12 @@ Deno.test({
     `;
 
     const response = await postCode(script, "run", { value: 42 });
-    assertEquals(response.status, 400);
+    assertEquals(response.status, 422);
 
     const data = await response.json();
-    assertEquals(data.error, "Runtime error");
+    assertEquals(data.message, "Runtime error");
+    assertEquals(typeof data.stack, "string");
+    assertEquals(Array.isArray(data.logs), true);
   },
   sanitizeResources: false,
   sanitizeOps: false,

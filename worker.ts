@@ -12,6 +12,7 @@ interface WorkerResponse {
   result?: unknown;
   logs?: Array<{ ts: number; level: LogLevel; message: string }>;
   error?: string;
+  stack?: string;
 }
 
 // Listen for messages from the main thread
@@ -65,6 +66,7 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
       const response: WorkerResponse = {
         type: "error",
         error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
         logs,
       };
       self.postMessage(response);
@@ -77,4 +79,3 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
     }
   }
 };
-

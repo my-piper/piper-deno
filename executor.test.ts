@@ -69,7 +69,7 @@ Deno.test(
 
     assertEquals(result.result, { message: "Sum: 499999500000" });
     assertEquals(result.logs.length, 2);
-  }
+  },
 );
 
 Deno.test("executor - error handling", async () => {
@@ -89,7 +89,7 @@ Deno.test("executor - error handling", async () => {
       });
     },
     Error,
-    "Intentional error for testing"
+    "Intentional error for testing",
   );
 });
 
@@ -113,7 +113,7 @@ Deno.test("executor - infinite loop timeout", async () => {
       });
     },
     Error,
-    "Execution timeout"
+    "Execution timeout",
   );
 });
 
@@ -133,7 +133,7 @@ Deno.test("executor - missing function", async () => {
       });
     },
     Error,
-    "Code must export function greet"
+    "Code must export function greet",
   );
 });
 
@@ -200,7 +200,7 @@ Deno.test("executor - custom timeout in request", async () => {
       });
     },
     Error,
-    "Execution timeout"
+    "Execution timeout",
   );
 });
 

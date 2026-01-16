@@ -64,7 +64,7 @@ Deno.test("concurrent execution - isolation test", async () => {
   assertEquals(
     duration >= 5000,
     true,
-    "Should take at least 5 seconds (default timeout)"
+    "Should take at least 5 seconds (default timeout)",
   );
   assertEquals(duration < 6000, true, "Should complete shortly after timeout");
 
@@ -105,7 +105,7 @@ Deno.test("concurrent execution - multiple normal requests", async () => {
   assertEquals(
     duration < 300,
     true,
-    `Should complete in parallel, took ${duration}ms`
+    `Should complete in parallel, took ${duration}ms`,
   );
 
   console.log(`✅ Multiple concurrent requests completed in ${duration}ms`);
@@ -153,7 +153,7 @@ Deno.test("concurrent execution - mixed fast and slow requests", async () => {
   assertEquals(
     duration < 800,
     true,
-    "Should not be much slower than slow request"
+    "Should not be much slower than slow request",
   );
 
   console.log(`✅ Mixed speed requests completed in ${duration}ms`);

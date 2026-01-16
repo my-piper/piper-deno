@@ -2,6 +2,21 @@ import { RunCode } from "./model/run-code.ts";
 
 type LogLevel = "log" | "info" | "warn" | "error";
 
+export class ExecutionError extends Error {
+  override stack: string;
+  logs: Array<{ ts: number; level: LogLevel; message: string }>;
+
+  constructor(
+    message: string,
+    stack: string,
+    logs: Array<{ ts: number; level: LogLevel; message: string }>,
+  ) {
+    super(message);
+    this.stack = stack;
+    this.logs = logs;
+  }
+}
+
 interface WorkerMessage {
   type: "execute";
   data: RunCode;
@@ -12,12 +27,13 @@ interface WorkerResponse {
   result?: unknown;
   logs?: Array<{ ts: number; level: LogLevel; message: string }>;
   error?: string;
+  stack?: string;
 }
 
 const DEFAULT_TIMEOUT_MS = 5000; // 5 seconds
 const MAX_TIMEOUT_MS = 300000; // 300 seconds (5 minutes)
 
-export async function execute(runCode: RunCode): Promise<{
+export function execute(runCode: RunCode): Promise<{
   result: unknown;
   logs: Array<{ ts: number; level: LogLevel; message: string }>;
 }> {
@@ -32,7 +48,7 @@ export async function execute(runCode: RunCode): Promise<{
       new URL("./worker.ts", import.meta.url).href,
       {
         type: "module",
-      }
+      },
     );
 
     let isResolved = false;
@@ -69,7 +85,13 @@ export async function execute(runCode: RunCode): Promise<{
           logs: data.logs || [],
         });
       } else {
-        reject(new Error(data.error || "Unknown error"));
+        reject(
+          new ExecutionError(
+            data.error || "Unknown error",
+            data.stack || "",
+            data.logs || [],
+          ),
+        );
       }
     };
 

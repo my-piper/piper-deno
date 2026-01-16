@@ -7,6 +7,46 @@
     "test": "deno test --allow-net --allow-read --allow-env",
     "test:unit": "deno test --allow-net --allow-read --allow-env executor.test.ts",
     "test:concurrent": "deno test --allow-net --allow-read --allow-env concurrent.test.ts",
-    "test:integration": "deno test --allow-net --allow-read --allow-env server.test.ts"
+    "test:integration": "deno test --allow-net --allow-read --allow-env server.test.ts",
+    "fmt": "deno fmt",
+    "fmt:check": "deno fmt --check",
+    "lint": "deno lint",
+    "lint:fix": "deno lint --fix",
+    "check": "deno fmt --check && deno lint && deno check server.ts executor.ts worker.ts model/run-code.ts"
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 80,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve",
+    "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json"],
+    "exclude": ["node_modules/", "deno.lock"]
+  },
+  "lint": {
+    "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+    "exclude": ["node_modules/", "deno.lock", "**/*.test.ts"],
+    "rules": {
+      "tags": ["recommended"],
+      "include": [
+        "ban-untagged-todo",
+        "camelcase",
+        "eqeqeq",
+        "explicit-function-return-type",
+        "no-await-in-loop",
+        "no-const-assign",
+        "no-eval",
+        "no-implicit-declare-namespace-export",
+        "no-non-null-assertion",
+        "no-throw-literal",
+        "no-var",
+        "prefer-const"
+      ],
+      "exclude": [
+        "no-explicit-any",
+        "no-process-global"
+      ]
+    }
   }
 }

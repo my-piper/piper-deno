@@ -146,6 +146,48 @@ deno task start
 deno task test:integration
 ```
 
+## 🎨 Code Quality
+
+### Formatting
+
+This project uses Deno's built-in formatter (based on dprint):
+
+```bash
+# Format all files
+deno task fmt
+
+# Check formatting without modifying files
+deno task fmt:check
+```
+
+### Linting
+
+This project uses Deno's built-in linter:
+
+```bash
+# Lint all files
+deno task lint
+
+# Auto-fix linting issues
+deno task lint:fix
+```
+
+### Combined Check
+
+Run all checks (formatting, linting, and type checking):
+
+```bash
+deno task check
+```
+
+### Configuration
+
+- **Formatting**: Configured in `deno.json` under `fmt` section
+- **Linting**: Configured in `deno.json` under `lint` section
+- **Prettier**: `.prettierrc.json` for editor compatibility
+- **EditorConfig**: `.editorconfig` for consistent editor settings
+- **ESLint**: `.eslintrc.json` for ESLint compatibility (references Deno rules)
+
 ### Manual Testing with cURL
 
 **Normal Code:**
