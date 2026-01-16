@@ -78,6 +78,115 @@ The server will be available at:
 }
 ```
 
+### Buffer to Data URI Conversion with MIME Type Detection
+
+The server automatically converts any `Uint8Array` (Buffer) objects in the result to data URIs with base64 encoding and **automatic MIME type detection**. This makes it easy to return binary data like images, files, or any binary content with the correct content type.
+
+#### MIME Type Detection
+
+The server detects MIME types using:
+
+1. **Magic Numbers (File Signatures)** - For binary formats
+2. **Content Analysis** - For text-based formats
+
+**Supported MIME Types**:
+
+- **Images**: PNG, JPEG, GIF, WebP, BMP, TIFF, **SVG**, AVIF
+- **Videos**: MP4, WebM, FLV
+- **Audio**: MP3, OGG, WAV
+- **Documents**: PDF, ZIP, Office formats
+- **Text**: JSON, XML, HTML, plain text
+- **Archives**: GZIP, BZIP2, 7Z, RAR
+
+> **Note**: SVG files are detected both by their magic number (`<svg`) and by content analysis (searching for `<svg` tag), supporting SVG files with or without XML declarations.
+
+#### Examples
+
+**Text Buffer** (auto-detected as `text/plain`):
+
+```javascript
+export function run(inputs) {
+  return new Uint8Array([72, 101, 108, 108, 111]); // "Hello"
+}
+
+// Server response
+{
+  "result": "data:text/plain;base64,SGVsbG8=",
+  "logs": []
+}
+```
+
+**PNG Image** (auto-detected as `image/png`):
+
+```javascript
+export function run(inputs) {
+  // PNG signature
+  return new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+}
+
+// Server response
+{
+  "result": "data:image/png;base64,iVBORw0KGgo=",
+  "logs": []
+}
+```
+
+**JSON Buffer** (auto-detected as `application/json`):
+
+```javascript
+export function run(inputs) {
+  const jsonText = JSON.stringify({ message: "Hello" });
+  return new TextEncoder().encode(jsonText);
+}
+
+// Server response
+{
+  "result": "data:application/json;base64,eyJtZXNzYWdlIjoiSGVsbG8ifQ==",
+  "logs": []
+}
+```
+
+**SVG Image** (auto-detected as `image/svg+xml`):
+
+```javascript
+export function run(inputs) {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="10"/></svg>';
+  return new TextEncoder().encode(svg);
+}
+
+// Server response
+{
+  "result": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxjaXJjbGUgcj0iMTAiLz48L3N2Zz4=",
+  "logs": []
+}
+```
+
+**Nested Buffers**:
+
+```javascript
+export function run(inputs) {
+  return {
+    image: new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
+    metadata: {
+      thumbnail: new Uint8Array([0xFF, 0xD8, 0xFF]) // JPEG
+    }
+  };
+}
+
+// Server response
+{
+  "result": {
+    "image": "data:image/png;base64,iVBORw0KGgo=",
+    "metadata": {
+      "thumbnail": "data:image/jpeg;base64,/9j/"
+    }
+  },
+  "logs": []
+}
+```
+
+See `examples/buffer-conversion-example.ts` for more examples.
+
 ## 🧪 Testing
 
 ### Run All Tests

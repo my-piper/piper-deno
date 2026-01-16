@@ -305,3 +305,118 @@ Deno.test({
   sanitizeResources: false,
   sanitizeOps: false,
 });
+
+Deno.test({
+  name: "server - converts Buffer to data URI with MIME type detection",
+  async fn() {
+    const script = `
+      export function run(inputs) {
+        return new Uint8Array([72, 101, 108, 108, 111]); // "Hello" - text/plain
+      }
+    `;
+
+    const response = await postCode(script, "run", {});
+    assertEquals(response.status, 200);
+
+    const data = await response.json();
+    assertEquals(
+      data.result,
+      "data:text/plain;base64,SGVsbG8=",
+    );
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: "server - detects PNG image MIME type",
+  async fn() {
+    const script = `
+      export function run(inputs) {
+        // PNG signature
+        return new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+      }
+    `;
+
+    const response = await postCode(script, "run", {});
+    assertEquals(response.status, 200);
+
+    const data = await response.json();
+    assertEquals(
+      data.result.startsWith("data:image/png;base64,"),
+      true,
+    );
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: "server - converts nested Buffers to data URIs",
+  async fn() {
+    const script = `
+      export function run(inputs) {
+        return {
+          image: new Uint8Array([65, 66]),
+          items: [
+            new Uint8Array([67]),
+            { data: new Uint8Array([68, 69]) }
+          ]
+        };
+      }
+    `;
+
+    const response = await postCode(script, "run", {});
+    assertEquals(response.status, 200);
+
+    const data = await response.json();
+    assertEquals(
+      data.result.image,
+      "data:text/plain;base64,QUI=",
+    );
+    assertEquals(
+      data.result.items[0],
+      "data:text/plain;base64,Qw==",
+    );
+    assertEquals(
+      data.result.items[1].data,
+      "data:text/plain;base64,REU=",
+    );
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});
+
+Deno.test({
+  name: "server - preserves non-buffer values",
+  async fn() {
+    const script = `
+      export function run(inputs) {
+        return {
+          text: "hello",
+          number: 42,
+          bool: true,
+          null: null,
+          array: [1, 2, 3],
+          buffer: new Uint8Array([65])
+        };
+      }
+    `;
+
+    const response = await postCode(script, "run", {});
+    assertEquals(response.status, 200);
+
+    const data = await response.json();
+    assertEquals(data.result.text, "hello");
+    assertEquals(data.result.number, 42);
+    assertEquals(data.result.bool, true);
+    assertEquals(data.result.null, null);
+    assertEquals(data.result.array, [1, 2, 3]);
+    assertEquals(
+      data.result.buffer,
+      "data:text/plain;base64,QQ==",
+    );
+  },
+  sanitizeResources: false,
+  sanitizeOps: false,
+});

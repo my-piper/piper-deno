@@ -1,6 +1,7 @@
 import { Request, serve } from "https://deno.land/std/http/server.ts";
 import { execute, ExecutionError } from "./executor.ts";
 import { RunCodeSchema } from "./model/run-code.ts";
+import { convertBuffersToDataUris } from "./utils/buffer-to-data-uri.ts";
 
 serve(
   async (req: Request) => {
@@ -13,7 +14,9 @@ serve(
       const parsed = RunCodeSchema.parse(json);
 
       const { result, logs } = await execute(parsed);
-      return Response.json({ result, logs });
+      // Convert any Buffer objects in the result to data URIs
+      const convertedResult = convertBuffersToDataUris(result);
+      return Response.json({ result: convertedResult, logs });
     } catch (e: any) {
       // If it's an ExecutionError (user code error), return 422 with stack trace and logs
       if (e instanceof ExecutionError) {
