@@ -1,0 +1,80 @@
+import { RunCode } from "./model/run-code.ts";
+
+type LogLevel = "log" | "info" | "warn" | "error";
+
+interface WorkerMessage {
+  type: "execute";
+  data: RunCode;
+}
+
+interface WorkerResponse {
+  type: "success" | "error";
+  result?: unknown;
+  logs?: Array<{ ts: number; level: LogLevel; message: string }>;
+  error?: string;
+}
+
+// Listen for messages from the main thread
+self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
+  if (e.data.type === "execute") {
+    const { code, fn, payload } = e.data.data;
+
+    const logs: Array<{ ts: number; level: LogLevel; message: string }> = [];
+
+    const log = (level: LogLevel, ...a: unknown[]) => {
+      logs.push({ ts: Date.now(), level, message: a.join(" ") });
+    };
+
+    // Override console to capture logs
+    const originalConsole = globalThis.console;
+    globalThis.console = {
+      log: (...a: unknown[]) => log("log", ...a),
+      info: (...a: unknown[]) => log("info", ...a),
+      warn: (...a: unknown[]) => log("warn", ...a),
+      error: (...a: unknown[]) => log("error", ...a),
+    } as Console;
+
+    let blobUrl: string | null = null;
+
+    try {
+      // Create a blob URL from the user code
+      const blob = new Blob([code], { type: "application/javascript" });
+      blobUrl = URL.createObjectURL(blob);
+
+      // Import the user's code
+      const mod = await import(blobUrl);
+
+      const action = mod[fn];
+
+      if (typeof action !== "function") {
+        throw new Error(`Code must export function ${fn}`);
+      }
+
+      // Execute the user's function
+      const result = await action(payload);
+
+      // Send success response back to main thread
+      const response: WorkerResponse = {
+        type: "success",
+        result,
+        logs,
+      };
+      self.postMessage(response);
+    } catch (error) {
+      // Send error response back to main thread
+      const response: WorkerResponse = {
+        type: "error",
+        error: error instanceof Error ? error.message : String(error),
+        logs,
+      };
+      self.postMessage(response);
+    } finally {
+      // Cleanup
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+      globalThis.console = originalConsole;
+    }
+  }
+};
+

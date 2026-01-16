@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# Node modules
+node_modules
+
+# Tests
+*.test.ts
+test.sh
+TEST_SUMMARY.md
+
+# Documentation
+README.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+*.log
+logs
+
+# Environment
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp
+temp
+*.tmp
+
