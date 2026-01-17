@@ -241,6 +241,33 @@ Deno.test("executor - timeout max is 300 seconds", async () => {
   assertEquals(result.result, { message: "Quick execution" });
 });
 
+Deno.test("executor - script as URL", async () => {
+  // Create a temporary module file
+  const tempFile = await Deno.makeTempFile({ suffix: ".js" });
+  const moduleCode = `
+    export function greet(payload) {
+      console.log("Hello from URL module!");
+      return { message: "Hello from " + payload.name };
+    }
+  `;
+  await Deno.writeTextFile(tempFile, moduleCode);
+
+  try {
+    const result = await execute({
+      script: `file://${tempFile}`,
+      fn: "greet",
+      payload: { name: "URL" },
+    });
+
+    assertEquals(result.result, { message: "Hello from URL" });
+    assertEquals(result.logs.length, 1);
+    assertEquals(result.logs[0].message, "Hello from URL module!");
+  } finally {
+    // Cleanup
+    await Deno.remove(tempFile);
+  }
+});
+
 Deno.test("executor - timeout validation in schema", async () => {
   const script = `
     export function greet(payload) {

@@ -38,12 +38,25 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
     let blobUrl: string | null = null;
 
     try {
-      // Create a blob URL from the user script
-      const blob = new Blob([script], { type: "application/javascript" });
-      blobUrl = URL.createObjectURL(blob);
+      // Check if script is a URL or code string
+      const isUrl = script.startsWith("http://") ||
+                    script.startsWith("https://") ||
+                    script.startsWith("file://");
+
+      let moduleUrl: string;
+
+      if (isUrl) {
+        // Use the URL directly
+        moduleUrl = script;
+      } else {
+        // Create a blob URL from the user script code
+        const blob = new Blob([script], { type: "application/javascript" });
+        blobUrl = URL.createObjectURL(blob);
+        moduleUrl = blobUrl;
+      }
 
       // Import the user's code
-      const mod = await import(blobUrl);
+      const mod = await import(moduleUrl);
 
       const action = mod[fn];
 
