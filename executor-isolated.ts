@@ -76,7 +76,7 @@ export function execute(runCode: RunCode): Promise<{
             reject(
               new ExecutionError({
                 message: "Memory limit exceeded",
-                code: "MEMORY_ERROR",
+                code: "MEMORY_LIMIT_ERROR",
                 stack: errorOutput,
               }),
             );
