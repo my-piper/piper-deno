@@ -5,6 +5,7 @@ export const RunCodeSchema = z.object({
   fn: z.string().min(1),
   payload: z.record(z.any()),
   timeout: z.number().int().min(1).optional(), // Optional timeout in milliseconds (will be capped at 300 seconds in executor)
+  isolation: z.enum(["none", "process"]).optional(), // Optional isolation mode (default: "process")
 });
 
 export type RunCode = z.infer<typeof RunCodeSchema>;

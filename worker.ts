@@ -1,6 +1,5 @@
+import { type LogLevel } from "./executor-common.ts";
 import { RunCode } from "./model/run-code.ts";
-
-type LogLevel = "log" | "info" | "warn" | "error";
 
 interface WorkerMessage {
   type: "execute";

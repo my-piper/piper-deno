@@ -1,7 +1,20 @@
 import { Request, serve } from "https://deno.land/std/http/server.ts";
-import { execute, ExecutionError } from "./executor.ts";
+import {
+  execute as executeIsolated,
+  ExecutionError as ExecutionErrorIsolated,
+} from "./executor-isolated.ts";
+import {
+  execute as executeNone,
+  ExecutionError as ExecutionErrorNone,
+} from "./executor.ts";
 import { RunCodeSchema } from "./model/run-code.ts";
 import { convertBuffersToDataUris } from "./utils/buffer-to-data-uri.ts";
+
+const PER_WORKER_MEMORY_MB = +(Deno.env.get("PER_WORKER_MEMORY_MB") || 128);
+
+console.log(
+  `🚀 Server starting with configurable isolation (default: process, ${PER_WORKER_MEMORY_MB}M per worker)`,
+);
 
 serve(
   async (req: Request) => {
@@ -13,13 +26,21 @@ serve(
       const json = await req.json();
       const parsed = RunCodeSchema.parse(json);
 
+      // Choose executor based on isolation mode (default: "process")
+      const isolationMode = parsed.isolation ?? "process";
+      const execute =
+        isolationMode === "process" ? executeIsolated : executeNone;
+
       const { result, logs } = await execute(parsed);
       // Convert any Buffer objects in the result to data URIs
       const convertedResult = convertBuffersToDataUris(result);
       return Response.json({ result: convertedResult, logs });
     } catch (e: any) {
       // If it's an ExecutionError (user code error), return 422 with stack trace and logs
-      if (e instanceof ExecutionError) {
+      if (
+        e instanceof ExecutionErrorIsolated ||
+        e instanceof ExecutionErrorNone
+      ) {
         const { message, stack, code, logs } = e;
         return Response.json(
           {

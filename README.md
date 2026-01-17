@@ -4,11 +4,15 @@ This is a secure code execution service that prevents malicious code (like infin
 
 ## 🔒 Security Features
 
-- **Worker Isolation**: Each user request runs in a separate Worker thread
-- **Timeout Protection**: Code execution is limited to 1 second (configurable)
-- **Forced Termination**: Workers can be forcefully killed if they timeout
-- **Concurrent Safety**: Multiple users can execute code simultaneously without blocking each other
-- **Resource Cleanup**: Workers are automatically terminated and garbage collected
+- **Process Isolation**: Each user request runs in a separate Deno process (128M memory limit per execution)
+- **Timeout Protection**: Code execution is limited to 5 seconds (configurable, max 300s)
+- **Memory Limits**: Container (2G) with per-process limits (128M per worker)
+- **Forced Termination**: Processes are forcefully killed if they timeout or exceed memory
+- **Concurrent Safety**: Multiple users can execute code simultaneously without affecting each other
+- **Resource Cleanup**: Processes are automatically terminated and garbage collected
+- **Attack Protection**: Malicious users cannot consume all memory or crash the service
+
+📖 **See [ISOLATION_COMPARISON.md](./ISOLATION_COMPARISON.md) for security details**
 
 ## 🚀 Quick Start
 
@@ -44,22 +48,26 @@ The server will be available at:
 
 ```json
 {
-  "code": "export function run(inputs) { return { result: 'success' }; }",
+  "script": "export function run(inputs) { return { result: 'success' }; }",
   "fn": "run",
   "payload": { "key": "value" },
-  "timeout": 10000
+  "timeout": 10000,
+  "isolation": "process"
 }
 ```
 
 **Parameters**:
 
-- `code` (string, required) - JavaScript code to execute
+- `script` (string, required) - JavaScript code to execute
 - `fn` (string, required) - Function name to call from the exported code
 - `payload` (object, required) - Input data passed to the function
 - `timeout` (number, optional) - Execution timeout in milliseconds
   - Default: 5000ms (5 seconds)
   - Maximum: 300000ms (300 seconds / 5 minutes)
   - Values above 300000ms will be capped at 300000ms
+- `isolation` (string, optional) - Isolation mode
+  - `"process"` (default) - Secure process isolation with 128M memory limit per worker
+  - `"none"` - Faster execution with shared memory (less secure, use only for trusted code)
 
 **Success Response**:
 
@@ -187,6 +195,47 @@ export function run(inputs) {
 
 See `examples/buffer-conversion-example.ts` for more examples.
 
+### Isolation Mode Examples
+
+**Secure Process Isolation (Default)**:
+
+```bash
+curl -X POST http://localhost:3333 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "script": "export function main() { return { secure: true }; }",
+    "fn": "main",
+    "payload": {},
+    "isolation": "process"
+  }'
+```
+
+**Fast Execution (No Isolation)**:
+
+```bash
+curl -X POST http://localhost:3333 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "script": "export function main() { return { fast: true }; }",
+    "fn": "main",
+    "payload": {},
+    "isolation": "none"
+  }'
+```
+
+**Default (Process Isolation)**:
+
+```bash
+# Omitting "isolation" defaults to "process"
+curl -X POST http://localhost:3333 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "script": "export function main() { return { default: true }; }",
+    "fn": "main",
+    "payload": {}
+  }'
+```
+
 ## 🧪 Testing
 
 ### Run All Tests
@@ -216,7 +265,6 @@ deno task test:integration
 ### Test Files
 
 - **`executor.test.ts`** - Unit tests for code execution
-
   - Normal code execution
   - Async code execution
   - CPU-intensive code
@@ -227,7 +275,6 @@ deno task test:integration
   - Custom timeout
 
 - **`concurrent.test.ts`** - Concurrent execution tests
-
   - Isolation test (normal + hacker + normal)
   - Multiple normal requests
   - Mixed fast and slow requests
