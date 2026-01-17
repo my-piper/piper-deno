@@ -3,11 +3,11 @@
     "std/": "https://deno.land/std@0.224.0/"
   },
   "tasks": {
-    "start": "deno run --allow-net --allow-read --allow-env --allow-run server.ts",
-    "test": "deno test --allow-net --allow-read --allow-env --allow-run",
-    "test:unit": "deno test --allow-net --allow-read --allow-env --allow-run executor.test.ts",
-    "test:concurrent": "deno test --allow-net --allow-read --allow-env --allow-run concurrent.test.ts",
-    "test:integration": "deno test --allow-net --allow-read --allow-env --allow-run server.test.ts",
+    "start": "deno run --allow-net --allow-read --allow-env --allow-run --allow-write server.ts",
+    "test": "deno test --allow-net --allow-read --allow-env --allow-run --allow-write",
+    "test:unit": "deno test --allow-net --allow-read --allow-env --allow-run --allow-write executor.test.ts",
+    "test:concurrent": "deno test --allow-net --allow-read --allow-env --allow-run --allow-write concurrent.test.ts",
+    "test:integration": "deno test --allow-net --allow-read --allow-env --allow-run --allow-write server.test.ts",
     "fmt": "deno fmt",
     "fmt:check": "deno fmt --check",
     "fmt:watch": "deno fmt --watch",

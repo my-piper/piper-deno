@@ -1,3 +1,5 @@
+import { encodeBase64 } from "jsr:@std/encoding/base64";
+
 /**
  * Detects MIME type from buffer content by checking magic numbers (file signatures)
  */
@@ -53,7 +55,8 @@ function detectMimeType(buffer: Uint8Array): string {
   // Document formats
   if (signature.startsWith("25504446")) return "application/pdf";
   if (
-    signature.startsWith("504b0304") || signature.startsWith("504b0506") ||
+    signature.startsWith("504b0304") ||
+    signature.startsWith("504b0506") ||
     signature.startsWith("504b0708")
   ) {
     // ZIP-based formats (DOCX, XLSX, etc.)
@@ -87,10 +90,7 @@ function detectMimeType(buffer: Uint8Array): string {
       if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
         return "application/json";
       }
-      if (
-        lowerText.includes("<!doctype html") ||
-        lowerText.includes("<html")
-      ) {
+      if (lowerText.includes("<!doctype html") || lowerText.includes("<html")) {
         return "text/html";
       }
       // Check for SVG (with or without XML declaration)
@@ -114,15 +114,24 @@ function detectMimeType(buffer: Uint8Array): string {
  * Converts a Buffer to a data URI with base64 encoding
  */
 function bufferToDataUri(buffer: Uint8Array): string {
-  // Convert Uint8Array to base64
-  const base64 = btoa(String.fromCharCode(...buffer));
+  // Convert Uint8Array to base64 using Deno's standard library (fastest method)
+  // This is much faster than btoa(String.fromCharCode(...buffer)) for large buffers
+  const base64 = encodeBase64(buffer);
+
   // Detect MIME type from buffer content
   const mimeType = detectMimeType(buffer);
   return `data:${mimeType};base64,${base64}`;
 }
 
 /**
- * Recursively converts all Buffer objects in a value to data URIs
+ * Recursively converts all Uint8Array (Buffer) objects in a value to data URIs
+ *
+ * This function is called:
+ * 1. In worker-process.ts BEFORE JSON serialization (handles real Uint8Arrays)
+ * 2. In server.ts for isolation="none" mode (handles real Uint8Arrays)
+ *
+ * Since we convert before serialization, we never encounter serialized arrays
+ * like {"0": 137, "1": 80, ...} - they're already data URI strings!
  */
 export function convertBuffersToDataUris(value: unknown): unknown {
   // Handle null and undefined
@@ -140,10 +149,11 @@ export function convertBuffersToDataUris(value: unknown): unknown {
     return value.map((item) => convertBuffersToDataUris(item));
   }
 
-  // Handle plain objects
+  // Handle plain objects - recursively convert values
   if (typeof value === "object" && value.constructor === Object) {
+    const obj = value as Record<string, unknown>;
     const result: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(value)) {
+    for (const [key, val] of Object.entries(obj)) {
       result[key] = convertBuffersToDataUris(val);
     }
     return result;

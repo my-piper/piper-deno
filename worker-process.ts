@@ -4,6 +4,7 @@
  */
 
 import { type LogLevel } from "./executor-common.ts";
+import { convertBuffersToDataUris } from "./utils/buffer-to-data-uri.ts";
 
 interface RunCode {
   script: string;
@@ -73,7 +74,7 @@ try {
     // Get the function
     const targetFn = module[fn];
     if (typeof targetFn !== "function") {
-      throw new Error(`Function "${fn}" not found in module`);
+      throw new Error(`Code must export function ${fn}`);
     }
 
     // Execute the function
@@ -87,11 +88,15 @@ try {
       URL.revokeObjectURL(blobUrl);
     }
 
+    // Convert any Uint8Array buffers to data URIs BEFORE serialization
+    // This prevents the Uint8Array → {"0": 137, "1": 80, ...} serialization issue
+    const convertedResult = convertBuffersToDataUris(result);
+
     // Output success
     console.log(
       JSON.stringify({
         type: "success",
-        result,
+        result: convertedResult,
         logs,
       }),
     );

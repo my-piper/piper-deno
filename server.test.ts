@@ -49,10 +49,11 @@ Deno.test({
     `;
 
     const response = await postCode(script, "run", { value: 42 });
-    assertEquals(response.status, 400);
+    assertEquals(response.status, 422);
 
     const data = await response.json();
-    assertEquals(data.error, "Execution timeout");
+    assertEquals(data.message, "Execution timeout");
+    assertEquals(data.code, "TIMEOUT_ERROR");
   },
   sanitizeResources: false,
   sanitizeOps: false,
@@ -198,14 +199,15 @@ Deno.test({
     assertEquals(response3.status, 200);
 
     // Hacker request should timeout
-    assertEquals(response2.status, 400);
+    assertEquals(response2.status, 422);
 
     const data1 = await response1.json();
     const data2 = await response2.json();
     const data3 = await response3.json();
 
     assertEquals(data1.result, { user: 1, result: "success" });
-    assertEquals(data2.error, "Execution timeout");
+    assertEquals(data2.message, "Execution timeout");
+    assertEquals(data2.code, "TIMEOUT_ERROR");
     assertEquals(data3.result, { user: 2, result: "success" });
   },
   sanitizeResources: false,
@@ -233,9 +235,10 @@ Deno.test({
         timeout: 1000,
       }),
     });
-    assertEquals(response1.status, 400);
+    assertEquals(response1.status, 422);
     const data1 = await response1.json();
-    assertEquals(data1.error, "Execution timeout");
+    assertEquals(data1.message, "Execution timeout");
+    assertEquals(data1.code, "TIMEOUT_ERROR");
 
     // Should succeed with 3 second timeout
     const response2 = await fetch(BASE_URL, {
@@ -319,10 +322,7 @@ Deno.test({
     assertEquals(response.status, 200);
 
     const data = await response.json();
-    assertEquals(
-      data.result,
-      "data:text/plain;base64,SGVsbG8=",
-    );
+    assertEquals(data.result, "data:text/plain;base64,SGVsbG8=");
   },
   sanitizeResources: false,
   sanitizeOps: false,
@@ -342,10 +342,7 @@ Deno.test({
     assertEquals(response.status, 200);
 
     const data = await response.json();
-    assertEquals(
-      data.result.startsWith("data:image/png;base64,"),
-      true,
-    );
+    assertEquals(data.result.startsWith("data:image/png;base64,"), true);
   },
   sanitizeResources: false,
   sanitizeOps: false,
@@ -370,18 +367,9 @@ Deno.test({
     assertEquals(response.status, 200);
 
     const data = await response.json();
-    assertEquals(
-      data.result.image,
-      "data:text/plain;base64,QUI=",
-    );
-    assertEquals(
-      data.result.items[0],
-      "data:text/plain;base64,Qw==",
-    );
-    assertEquals(
-      data.result.items[1].data,
-      "data:text/plain;base64,REU=",
-    );
+    assertEquals(data.result.image, "data:text/plain;base64,QUI=");
+    assertEquals(data.result.items[0], "data:text/plain;base64,Qw==");
+    assertEquals(data.result.items[1].data, "data:text/plain;base64,REU=");
   },
   sanitizeResources: false,
   sanitizeOps: false,
@@ -412,10 +400,7 @@ Deno.test({
     assertEquals(data.result.bool, true);
     assertEquals(data.result.null, null);
     assertEquals(data.result.array, [1, 2, 3]);
-    assertEquals(
-      data.result.buffer,
-      "data:text/plain;base64,QQ==",
-    );
+    assertEquals(data.result.buffer, "data:text/plain;base64,QQ==");
   },
   sanitizeResources: false,
   sanitizeOps: false,
