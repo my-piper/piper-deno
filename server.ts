@@ -58,6 +58,6 @@ serve(
   },
   {
     hostname: "0.0.0.0",
-    port: +process.env["PORT"] || 3333,
+    port: +(Deno.env.get("PORT") || 3333),
   },
 );
