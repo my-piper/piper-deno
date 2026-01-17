@@ -12,6 +12,7 @@ interface WorkerResponse {
   result?: unknown;
   logs?: Array<{ ts: number; level: LogLevel; message: string }>;
   error?: string;
+  name?: string;
   stack?: string;
 }
 
@@ -39,9 +40,10 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
 
     try {
       // Check if script is a URL or code string
-      const isUrl = script.startsWith("http://") ||
-                    script.startsWith("https://") ||
-                    script.startsWith("file://");
+      const isUrl =
+        script.startsWith("http://") ||
+        script.startsWith("https://") ||
+        script.startsWith("file://");
 
       let moduleUrl: string;
 
@@ -74,12 +76,17 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
         logs,
       };
       self.postMessage(response);
-    } catch (error) {
+    } catch (error: any) {
       // Send error response back to main thread
       const response: WorkerResponse = {
         type: "error",
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
+        ...(error instanceof Error
+          ? {
+              message: error.message,
+              stack: error.stack,
+            }
+          : { message: String(error) }),
+        ...("code" in error ? { code: error.code } : {}),
         logs,
       };
       self.postMessage(response);

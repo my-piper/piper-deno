@@ -20,11 +20,13 @@ serve(
     } catch (e: any) {
       // If it's an ExecutionError (user code error), return 422 with stack trace and logs
       if (e instanceof ExecutionError) {
+        const { message, stack, code, logs } = e;
         return Response.json(
           {
-            message: e.message,
-            stack: e.stack,
-            logs: e.logs,
+            message,
+            stack,
+            code,
+            logs,
           },
           { status: 422 },
         );

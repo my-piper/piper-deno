@@ -3,17 +3,25 @@ import { RunCode } from "./model/run-code.ts";
 type LogLevel = "log" | "info" | "warn" | "error";
 
 export class ExecutionError extends Error {
+  code?: string;
   override stack: string;
   logs: Array<{ ts: number; level: LogLevel; message: string }>;
 
-  constructor(
-    message: string,
-    stack: string,
-    logs: Array<{ ts: number; level: LogLevel; message: string }>,
-  ) {
-    super(message);
-    this.stack = stack;
-    this.logs = logs;
+  constructor({
+    message,
+    stack,
+    code,
+    logs,
+  }: {
+    message?: string;
+    stack?: string;
+    code?: string;
+    logs?: Array<{ ts: number; level: LogLevel; message: string }>;
+  }) {
+    super(message || "Unknown error");
+    this.code = code;
+    this.stack = stack || "";
+    this.logs = logs || [];
   }
 }
 
@@ -25,9 +33,10 @@ interface WorkerMessage {
 interface WorkerResponse {
   type: "success" | "error";
   result?: unknown;
-  logs?: Array<{ ts: number; level: LogLevel; message: string }>;
   error?: string;
+  code?: string;
   stack?: string;
+  logs?: Array<{ ts: number; level: LogLevel; message: string }>;
 }
 
 const DEFAULT_TIMEOUT_MS = 5000; // 5 seconds
@@ -85,12 +94,14 @@ export function execute(runCode: RunCode): Promise<{
           logs: data.logs || [],
         });
       } else {
+        const { error: message, stack, code, logs } = data;
         reject(
-          new ExecutionError(
-            data.error || "Unknown error",
-            data.stack || "",
-            data.logs || [],
-          ),
+          new ExecutionError({
+            message,
+            stack,
+            code,
+            logs,
+          }),
         );
       }
     };

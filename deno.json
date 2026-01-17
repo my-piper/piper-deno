@@ -10,9 +10,12 @@
     "test:integration": "deno test --allow-net --allow-read --allow-env server.test.ts",
     "fmt": "deno fmt",
     "fmt:check": "deno fmt --check",
+    "fmt:watch": "deno fmt --watch",
     "lint": "deno lint",
     "lint:fix": "deno lint --fix",
-    "check": "deno fmt --check && deno lint && deno check server.ts executor.ts worker.ts model/run-code.ts"
+    "lint:watch": "deno lint --watch",
+    "check": "deno fmt --check && deno lint && deno check server.ts executor.ts worker.ts model/run-code.ts",
+    "check:types": "deno check server.ts executor.ts worker.ts model/run-code.ts"
   },
   "fmt": {
     "useTabs": false,
@@ -43,10 +46,7 @@
         "no-var",
         "prefer-const"
       ],
-      "exclude": [
-        "no-explicit-any",
-        "no-process-global"
-      ]
+      "exclude": ["no-explicit-any", "no-process-global"]
     }
   }
 }
