@@ -1,3 +1,5 @@
+/// <reference lib="deno.worker" />
+
 import { type LogLevel } from "./executor-common.ts";
 import { RunCode } from "./model/run-code.ts";
 
@@ -39,8 +41,7 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
 
     try {
       // Check if script is a URL or code string
-      const isUrl =
-        script.startsWith("http://") ||
+      const isUrl = script.startsWith("http://") ||
         script.startsWith("https://") ||
         script.startsWith("file://");
 
@@ -81,9 +82,9 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
         type: "error",
         ...(error instanceof Error
           ? {
-              message: error.message,
-              stack: error.stack,
-            }
+            message: error.message,
+            stack: error.stack,
+          }
           : { message: String(error) }),
         ...("code" in error ? { code: error.code } : {}),
         logs,
