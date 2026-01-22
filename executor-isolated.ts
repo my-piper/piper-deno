@@ -24,6 +24,7 @@ export function execute(runCode: RunCode): Promise<{
         "run",
         "--allow-net",
         "--allow-read",
+        "--allow-env",
         // Set V8 memory limit for THIS process only
         `--v8-flags=--max-old-space-size=${PER_WORKER_MEMORY_MB}`,
         new URL("./worker-process.ts", import.meta.url).href,
