@@ -11,6 +11,7 @@ This is a secure code execution service that prevents malicious code (like infin
 - **Concurrent Safety**: Multiple users can execute code simultaneously without affecting each other
 - **Resource Cleanup**: Processes are automatically terminated and garbage collected
 - **Attack Protection**: Malicious users cannot consume all memory or crash the service
+- **Import Allowlist**: Scripts import modules only from Deno's default hosts plus `ALLOW_IMPORT_HOSTS`
 
 📖 **See [GLOSSARY.md](./GLOSSARY.md) for the meaning of Worker vs Process isolation**
 
@@ -458,6 +459,24 @@ await execute({
   timeout: 10000, // 10 seconds
 });
 ```
+
+### Import Hosts
+
+Scripts given as a URL, and the modules they import, load only from Deno's
+default hosts (deno.land, jsr.io, esm.sh, cdn.jsdelivr.net,
+raw.githubusercontent.com, gist.githubusercontent.com) plus the hosts listed in
+`ALLOW_IMPORT_HOSTS` (comma-separated `host:port`), e.g. Piper's internal
+Package Registry:
+
+```bash
+ALLOW_IMPORT_HOSTS=registry:8085
+# The registry requires a token; Deno sends it as a bearer token per host.
+DENO_AUTH_TOKENS=<token>@registry:8085
+```
+
+Both isolation modes apply the list: child processes get `--allow-import=<hosts>`
+and workers get it as their `import` permission, so the server itself runs with
+`--allow-import --unstable-worker-options`.
 
 ### Docker Resource Limits
 
