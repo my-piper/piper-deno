@@ -6,6 +6,7 @@ import {
 } from "../common.ts";
 import { RunCode } from "../../run-code.ts";
 import { convertBuffersToDataUris } from "../buffer-to-data-uri.ts";
+import { importHosts } from "../imports.ts";
 
 interface WorkerMessage {
   type: "execute";
@@ -30,6 +31,24 @@ const workerPool: Array<{
   requestCount: number;
 }> = [];
 
+// Scripts get only what they need, not the server's own permissions (such as
+// --allow-run), and import only from the allowed hosts. Needs the server to
+// run with --unstable-worker-options and --allow-import.
+function workerOptions(): WorkerOptions {
+  return {
+    type: "module",
+    // @ts-ignore: `deno` worker options need --unstable-worker-options
+    deno: {
+      permissions: {
+        net: true,
+        read: true,
+        env: true,
+        import: importHosts(),
+      },
+    },
+  };
+}
+
 function getOrCreateWorker(): {
   worker: Worker;
   shouldRecycle: boolean;
@@ -48,7 +67,7 @@ function getOrCreateWorker(): {
     // deno-lint-ignore no-explicit-any
     const worker = new (globalThis as any).Worker(
       new URL("./worker.ts", import.meta.url).href,
-      { type: "module" },
+      workerOptions(),
     ) as Worker;
 
     const poolEntry = { worker, busy: true, requestCount: 1 };
@@ -60,7 +79,7 @@ function getOrCreateWorker(): {
   // deno-lint-ignore no-explicit-any
   const worker = new (globalThis as any).Worker(
     new URL("./worker.ts", import.meta.url).href,
-    { type: "module" },
+    workerOptions(),
   ) as Worker;
   return { worker, shouldRecycle: true }; // Will be terminated after use
 }

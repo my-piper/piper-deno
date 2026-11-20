@@ -5,6 +5,7 @@ import {
   MAX_TIMEOUT_MS,
 } from "../common.ts";
 import { RunCode } from "../../run-code.ts";
+import { importHosts } from "../imports.ts";
 
 const PER_WORKER_MEMORY_MB = Number(Deno.env.get("PER_WORKER_MEMORY_MB")) ||
   128; // Memory limit per worker in MB
@@ -24,6 +25,9 @@ export function execute(runCode: RunCode): Promise<{
         "--allow-net",
         "--allow-read",
         "--allow-env",
+        `--allow-import=${importHosts().join(",")}`,
+        // Node scripts are not service dependencies: keep them out of deno.lock
+        "--no-lock",
         // Set V8 memory limit for THIS process only
         `--v8-flags=--max-old-space-size=${PER_WORKER_MEMORY_MB}`,
         new URL("./child.ts", import.meta.url).href,
