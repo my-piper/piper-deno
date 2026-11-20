@@ -1,4 +1,4 @@
-# Deno Code Executor with Worker Isolation
+# Deno Code Executor with Process Isolation
 
 This is a secure code execution service that prevents malicious code (like infinite loops) from affecting other users.
 
@@ -12,7 +12,7 @@ This is a secure code execution service that prevents malicious code (like infin
 - **Resource Cleanup**: Processes are automatically terminated and garbage collected
 - **Attack Protection**: Malicious users cannot consume all memory or crash the service
 
-📖 **See [ISOLATION_COMPARISON.md](./ISOLATION_COMPARISON.md) for security details**
+📖 **See [GLOSSARY.md](./GLOSSARY.md) for the meaning of Worker vs Process isolation**
 
 ## 🚀 Quick Start
 
@@ -191,7 +191,8 @@ export function run(inputs) {
 }
 ```
 
-See `examples/buffer-conversion-example.ts` for more examples.
+See `src/execution/buffer-to-data-uri.test.ts` for more examples, and
+[ADR-0001](./docs/adr/0001-custom-mime-detection.md) for how MIME types are detected.
 
 ### Isolation Mode Examples
 
@@ -208,7 +209,7 @@ curl -X POST http://localhost:3333 \
   }'
 ```
 
-**Fast Execution (No Isolation)**:
+**Fast Execution (Worker Isolation, `"none"`)**:
 
 ```bash
 curl -X POST http://localhost:3333 \
@@ -242,8 +243,8 @@ curl -X POST http://localhost:3333 \
 # Run all tests
 deno task test
 
-# Or manually
-deno test --allow-net --allow-read --allow-env
+# Or manually (unit tests only; e2e lives in tests/e2e)
+deno test --allow-net --allow-read --allow-env --allow-run --allow-write src/
 ```
 
 ### Run Specific Test Suites
@@ -255,14 +256,14 @@ deno task test:unit
 # Concurrent execution tests
 deno task test:concurrent
 
-# Integration tests (HTTP server)
+# End-to-end tests (HTTP server)
 # Note: Server must be running on port 3333
-deno task test:integration
+deno task test:e2e
 ```
 
 ### Test Files
 
-- **`executor.test.ts`** - Unit tests for code execution
+- **`src/execution/worker/executor.test.ts`** - Unit tests for code execution
   - Normal code execution
   - Async code execution
   - CPU-intensive code
@@ -272,12 +273,12 @@ deno task test:integration
   - Console log levels
   - Custom timeout
 
-- **`concurrent.test.ts`** - Concurrent execution tests
+- **`src/execution/worker/concurrent.test.ts`** - Concurrent execution tests
   - Isolation test (normal + hacker + normal)
   - Multiple normal requests
   - Mixed fast and slow requests
 
-- **`server.test.ts`** - Integration tests (requires running server)
+- **`tests/e2e/server.test.ts`** - End-to-end tests (requires running server)
   - Normal code execution via HTTP
   - Infinite loop timeout via HTTP
   - Invalid request methods
@@ -288,16 +289,16 @@ deno task test:integration
   - Async code execution
   - Concurrent requests isolation
 
-### Running Integration Tests
+### Running End-to-End Tests
 
-Integration tests require the server to be running:
+End-to-end tests require the server to be running:
 
 ```bash
 # Terminal 1: Start the server
 deno task start
 
-# Terminal 2: Run integration tests
-deno task test:integration
+# Terminal 2: Run end-to-end tests
+deno task test:e2e
 ```
 
 ## 🎨 Code Quality
@@ -399,25 +400,32 @@ Expected response: `{"error":"Execution timeout"}`
 
 ## 📂 Files
 
-### Source Files
+```
+src/
+  server.ts                      HTTP entry point; picks an executor per isolation mode
+  run-code.ts                    Run request schema (zod)
+  execution/
+    common.ts                    ExecutionError, log levels, timeout limits
+    buffer-to-data-uri.ts        Converts binary results to data: URIs
+    worker/                      Worker isolation (isolation: "none")
+      executor.ts                Pooled Web Workers
+      worker.ts                  Web Worker that runs the script
+    process/                     Process isolation (isolation: "process", default)
+      executor.ts                Spawns one Deno process per run
+      child.ts                   Child process that runs the script
+    testdata/                    Fixtures for tests
+tests/e2e/                       HTTP tests against a running server
+docs/adr/                        Architecture decision records
+GLOSSARY.md                      Domain terms
+```
 
-- `server.ts` - HTTP server that handles requests
-- `executor.ts` - Worker-based code executor with timeout protection
-- `worker.ts` - Worker script that runs user code in isolation
-- `model/run-code.ts` - Request validation schema
-
-### Test Files
-
-- `executor.test.ts` - Unit tests for executor functionality
-- `concurrent.test.ts` - Concurrent execution and isolation tests
-- `server.test.ts` - Integration tests for HTTP server
+Unit tests live next to the code they test (`*.test.ts`).
 
 ### Scripts & Config
 
 - `Makefile` - Common operations (`make help`)
 - `deno.json` - Deno configuration and task definitions
 - `README.md` - This documentation
-- `TEST_SUMMARY.md` - Detailed test results and coverage
 
 ## ⚙️ Configuration
 

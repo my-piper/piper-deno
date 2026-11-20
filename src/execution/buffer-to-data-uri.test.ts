@@ -1,4 +1,7 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import {
+  assertEquals,
+  assertStringIncludes,
+} from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { convertBuffersToDataUris } from "./buffer-to-data-uri.ts";
 
 Deno.test("convertBuffersToDataUris - handles null and undefined", () => {
@@ -183,4 +186,17 @@ Deno.test("convertBuffersToDataUris - preserves non-plain objects", () => {
   const instance = new CustomClass();
   const result = convertBuffersToDataUris(instance);
   assertEquals(result, instance); // Should return as-is
+});
+
+Deno.test("convertBuffersToDataUris - encodes a real imagescript PNG", async () => {
+  const { run } = await import("./testdata/image-script.ts");
+  const rawResult = await run();
+
+  const converted = convertBuffersToDataUris(rawResult) as {
+    payload: { outputs: { image: unknown } };
+  };
+
+  const image = converted.payload.outputs.image;
+  assertEquals(typeof image, "string");
+  assertStringIncludes(image as string, "data:image/png;base64,");
 });

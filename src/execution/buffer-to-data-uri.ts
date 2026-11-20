@@ -1,4 +1,4 @@
-import { encodeBase64 } from "jsr:@std/encoding/base64";
+import { encodeBase64 } from "jsr:@std/encoding@^1.0.10/base64";
 
 /**
  * Detects MIME type from buffer content by checking magic numbers (file signatures)
@@ -127,8 +127,8 @@ function bufferToDataUri(buffer: Uint8Array): string {
  * Recursively converts all Uint8Array (Buffer) objects in a value to data URIs
  *
  * This function is called:
- * 1. In worker-process.ts BEFORE JSON serialization (handles real Uint8Arrays)
- * 2. In server.ts for isolation="none" mode (handles real Uint8Arrays)
+ * 1. In execution/process/child.ts BEFORE JSON serialization (handles real Uint8Arrays)
+ * 2. In execution/worker/executor.ts for Worker isolation (handles real Uint8Arrays)
  *
  * Since we convert before serialization, we never encounter serialized arrays
  * like {"0": 137, "1": 80, ...} - they're already data URI strings!

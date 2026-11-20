@@ -1,7 +1,7 @@
 /// <reference lib="deno.worker" />
 
-import { type LogLevel } from "./executor-common.ts";
-import { RunCode } from "./model/run-code.ts";
+import { type LogLevel } from "../common.ts";
+import { RunCode } from "../../run-code.ts";
 
 interface WorkerMessage {
   type: "execute";

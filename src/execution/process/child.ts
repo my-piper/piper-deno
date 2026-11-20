@@ -1,17 +1,11 @@
 /**
- * Worker process that runs in isolation with its own memory limit
- * This file is spawned as a separate Deno process
+ * Child process for Process isolation: spawned by ./executor.ts as a
+ * separate Deno process with its own memory limit.
  */
 
-import { type LogLevel } from "./executor-common.ts";
-import { convertBuffersToDataUris } from "./utils/buffer-to-data-uri.ts";
-
-interface RunCode {
-  script: string;
-  fn: string;
-  payload?: unknown;
-  timeout?: number;
-}
+import type { RunCode } from "../../run-code.ts";
+import { type LogLevel } from "../common.ts";
+import { convertBuffersToDataUris } from "../buffer-to-data-uri.ts";
 
 // Read input from stdin
 const decoder = new TextDecoder();
@@ -52,8 +46,7 @@ try {
 
   try {
     // Determine if script is a URL or code
-    const isUrl =
-      script.startsWith("http://") ||
+    const isUrl = script.startsWith("http://") ||
       script.startsWith("https://") ||
       script.startsWith("file://");
 
@@ -116,9 +109,9 @@ try {
         error: error instanceof Error ? error.message : String(error),
         ...(error instanceof Error
           ? {
-              message: error.message,
-              stack: error.stack,
-            }
+            message: error.message,
+            stack: error.stack,
+          }
           : { message: String(error) }),
         ...("code" in error ? { code: error.code } : {}),
         logs,

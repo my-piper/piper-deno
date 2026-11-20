@@ -3,12 +3,11 @@ import {
   ExecutionError,
   type LogLevel,
   MAX_TIMEOUT_MS,
-} from "./executor-common.ts";
-import { RunCode } from "./model/run-code.ts";
+} from "../common.ts";
+import { RunCode } from "../../run-code.ts";
 
-export { ExecutionError };
-
-const PER_WORKER_MEMORY_MB = +Deno.env.get("PER_WORKER_MEMORY_MB") || 128; // Memory limit per worker in MB
+const PER_WORKER_MEMORY_MB = Number(Deno.env.get("PER_WORKER_MEMORY_MB")) ||
+  128; // Memory limit per worker in MB
 
 export function execute(runCode: RunCode): Promise<{
   result: unknown;
@@ -27,7 +26,7 @@ export function execute(runCode: RunCode): Promise<{
         "--allow-env",
         // Set V8 memory limit for THIS process only
         `--v8-flags=--max-old-space-size=${PER_WORKER_MEMORY_MB}`,
-        new URL("./worker-process.ts", import.meta.url).href,
+        new URL("./child.ts", import.meta.url).href,
       ],
       stdin: "piped",
       stdout: "piped",
@@ -35,21 +34,23 @@ export function execute(runCode: RunCode): Promise<{
     }).spawn();
 
     let isResolved = false;
-    let timeoutId: number | undefined;
 
     // Set up timeout
-    timeoutId = setTimeout(() => {
-      if (!isResolved) {
-        isResolved = true;
-        process.kill("SIGKILL");
-        reject(
-          new ExecutionError({
-            message: "Execution timeout",
-            code: "TIMEOUT_ERROR",
-          }),
-        );
-      }
-    }, timeoutMs);
+    const timeoutId: ReturnType<typeof setTimeout> = setTimeout(
+      () => {
+        if (!isResolved) {
+          isResolved = true;
+          process.kill("SIGKILL");
+          reject(
+            new ExecutionError({
+              message: "Execution timeout",
+              code: "TIMEOUT_ERROR",
+            }),
+          );
+        }
+      },
+      timeoutMs,
+    );
 
     // Write input to process stdin
     const writer = process.stdin.getWriter();

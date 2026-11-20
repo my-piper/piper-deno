@@ -6,7 +6,9 @@
 node_modules
 
 # Tests
-*.test.ts
+**/*.test.ts
+**/testdata
+tests
 TEST_SUMMARY.md
 
 # Documentation

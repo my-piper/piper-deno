@@ -3,11 +3,9 @@ import {
   ExecutionError,
   type LogLevel,
   MAX_TIMEOUT_MS,
-} from "./executor-common.ts";
-import { RunCode } from "./model/run-code.ts";
-import { convertBuffersToDataUris } from "./utils/buffer-to-data-uri.ts";
-
-export { ExecutionError };
+} from "../common.ts";
+import { RunCode } from "../../run-code.ts";
+import { convertBuffersToDataUris } from "../buffer-to-data-uri.ts";
 
 interface WorkerMessage {
   type: "execute";
@@ -67,7 +65,7 @@ function getOrCreateWorker(): {
   return { worker, shouldRecycle: true }; // Will be terminated after use
 }
 
-function releaseWorker(worker: Worker, shouldRecycle: boolean) {
+function releaseWorker(worker: Worker, shouldRecycle: boolean): void {
   const poolEntry = workerPool.find((w) => w.worker === worker);
 
   if (poolEntry) {

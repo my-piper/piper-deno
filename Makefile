@@ -9,7 +9,7 @@ PER_WORKER_MEMORY_MB ?= 128
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install run test test-unit test-concurrent test-integration \
+.PHONY: help install run test test-unit test-concurrent test-e2e \
 	fmt fmt-check lint lint-fix typecheck check ci \
 	docker-build docker-run clean require-deno
 
@@ -31,14 +31,14 @@ run: require-deno ## Start the server locally
 test: require-deno ## Run the full test suite
 	$(DENO) task test
 
-test-unit: require-deno ## Run executor unit tests
+test-unit: require-deno ## Run unit tests (executor + buffer encoding)
 	$(DENO) task test:unit
 
 test-concurrent: require-deno ## Run concurrency/isolation tests
 	$(DENO) task test:concurrent
 
-test-integration: require-deno ## Run HTTP server integration tests
-	$(DENO) task test:integration
+test-e2e: require-deno ## Run HTTP end-to-end tests (needs `make run` in another shell)
+	$(DENO) task test:e2e
 
 fmt: require-deno ## Format code
 	$(DENO) task fmt
