@@ -19,11 +19,9 @@ This is a secure code execution service that prevents malicious code (like infin
 ### Local Development
 
 ```bash
-# Start the server
-./start.sh
-
-# Or manually:
-deno run --allow-net --allow-read --allow-env server.ts
+make install   # cache dependencies (requires deno)
+make run       # start the server
+make help      # list all targets (test, lint, check, docker-build, ...)
 ```
 
 ### Docker Compose
@@ -340,9 +338,7 @@ deno task check
 
 - **Formatting**: Configured in `deno.json` under `fmt` section
 - **Linting**: Configured in `deno.json` under `lint` section
-- **Prettier**: `.prettierrc.json` for editor compatibility
 - **EditorConfig**: `.editorconfig` for consistent editor settings
-- **ESLint**: `.eslintrc.json` for ESLint compatibility (references Deno rules)
 
 ### Manual Testing with cURL
 
@@ -418,7 +414,7 @@ Expected response: `{"error":"Execution timeout"}`
 
 ### Scripts & Config
 
-- `start.sh` - Local development startup script
+- `Makefile` - Common operations (`make help`)
 - `deno.json` - Deno configuration and task definitions
 - `README.md` - This documentation
 - `TEST_SUMMARY.md` - Detailed test results and coverage

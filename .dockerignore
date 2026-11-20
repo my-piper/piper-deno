@@ -7,7 +7,6 @@ node_modules
 
 # Tests
 *.test.ts
-test.sh
 TEST_SUMMARY.md
 
 # Documentation

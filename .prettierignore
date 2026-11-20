@@ -1,7 +1,0 @@
-node_modules/
-deno.lock
-*.lock
-.git/
-coverage/
-dist/
-build/

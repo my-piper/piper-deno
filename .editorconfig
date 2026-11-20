@@ -19,3 +19,7 @@ trim_trailing_whitespace = true
 [*.md]
 trim_trailing_whitespace = false
 
+
+# Makefile recipes require tabs
+[Makefile]
+indent_style = tab
