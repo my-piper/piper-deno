@@ -58,7 +58,7 @@ typecheck: require-deno ## Type-check entry points
 check: require-deno ## Format check + lint + no-remote-imports + type check (pre-push gate)
 	$(DENO) task check
 
-ci: check test ## Run everything CI should run
+ci: check test ## Run CI's check + test jobs (CI also runs test-e2e against the built image)
 
 docker-build: ## Build the Docker image (IMAGE=...)
 	$(DOCKER) build -t $(IMAGE) .

@@ -1,0 +1,22 @@
+name: Set up Deno
+description: Install the Deno version pinned in the Dockerfile's FROM line.
+
+runs:
+  using: composite
+  steps:
+    - name: Read Deno version from Dockerfile
+      id: version
+      shell: bash
+      run: |
+        version=$(sed -n 's|^FROM denoland/deno:\([0-9][^ @]*\)$|\1|p' Dockerfile)
+        if [ -z "$version" ]; then
+          echo "::error file=Dockerfile::expected 'FROM denoland/deno:<version>'" >&2
+          exit 1
+        fi
+        echo "deno=$version" >> "$GITHUB_OUTPUT"
+
+    - name: Set up Deno
+      uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+      with:
+        deno-version: ${{ steps.version.outputs.deno }}
+        cache: true

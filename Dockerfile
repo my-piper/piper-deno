@@ -1,5 +1,6 @@
-# Use official Deno image (latest stable)
-FROM denoland/deno:latest
+# Pinned Deno version: the single source of truth. CI reads it from this line
+# and Dependabot bumps it.
+FROM denoland/deno:2.9.8
 
 WORKDIR /app
 
