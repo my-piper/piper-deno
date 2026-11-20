@@ -1,4 +1,4 @@
-import { z } from "https://esm.sh/zod@3.22.4";
+import { z } from "zod";
 
 export const RunCodeSchema = z.object({
   script: z.string().min(1),

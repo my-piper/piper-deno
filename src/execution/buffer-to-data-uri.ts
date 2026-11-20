@@ -1,4 +1,4 @@
-import { encodeBase64 } from "jsr:@std/encoding@^1.0.10/base64";
+import { encodeBase64 } from "@std/encoding/base64";
 
 /**
  * Detects MIME type from buffer content by checking magic numbers (file signatures)

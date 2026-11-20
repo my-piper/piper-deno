@@ -1,7 +1,4 @@
-import {
-  assertEquals,
-  assertStringIncludes,
-} from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals, assertStringIncludes } from "@std/assert";
 import { convertBuffersToDataUris } from "./buffer-to-data-uri.ts";
 
 Deno.test("convertBuffersToDataUris - handles null and undefined", () => {

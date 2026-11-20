@@ -55,7 +55,7 @@ lint-fix: require-deno ## Lint and auto-fix
 typecheck: require-deno ## Type-check entry points
 	$(DENO) task check:types
 
-check: require-deno ## Format check + lint + type check (pre-push gate)
+check: require-deno ## Format check + lint + no-remote-imports + type check (pre-push gate)
 	$(DENO) task check
 
 ci: check test ## Run everything CI should run
