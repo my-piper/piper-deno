@@ -6,4 +6,3 @@ export async function run() {
   const image = await img.encode();
   return { payload: { outputs: { image } } };
 }
-
