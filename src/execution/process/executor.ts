@@ -6,6 +6,7 @@ import {
 } from "../common.ts";
 import { RunCode } from "../../run-code.ts";
 import { importHosts } from "../imports.ts";
+import { childCommand } from "./command.ts";
 
 const PER_WORKER_MEMORY_MB = Number(Deno.env.get("PER_WORKER_MEMORY_MB")) ||
   128; // Memory limit per worker in MB
@@ -20,18 +21,12 @@ export function execute(runCode: RunCode): Promise<{
   return new Promise((resolve, reject) => {
     // Spawn a separate Deno process with memory limit
     const process = new Deno.Command("deno", {
-      args: [
-        "run",
-        "--allow-net",
-        "--allow-read",
-        "--allow-env",
-        `--allow-import=${importHosts().join(",")}`,
-        // Node scripts are not service dependencies: keep them out of deno.lock
-        "--no-lock",
-        // Set V8 memory limit for THIS process only
-        `--v8-flags=--max-old-space-size=${PER_WORKER_MEMORY_MB}`,
-        new URL("./child.ts", import.meta.url).href,
-      ],
+      ...childCommand({
+        parentEnv: Deno.env.toObject(),
+        importHosts: importHosts(),
+        memoryMb: PER_WORKER_MEMORY_MB,
+        child: new URL("./child.ts", import.meta.url).href,
+      }),
       stdin: "piped",
       stdout: "piped",
       stderr: "piped",
@@ -40,21 +35,18 @@ export function execute(runCode: RunCode): Promise<{
     let isResolved = false;
 
     // Set up timeout
-    const timeoutId: ReturnType<typeof setTimeout> = setTimeout(
-      () => {
-        if (!isResolved) {
-          isResolved = true;
-          process.kill("SIGKILL");
-          reject(
-            new ExecutionError({
-              message: "Execution timeout",
-              code: "TIMEOUT_ERROR",
-            }),
-          );
-        }
-      },
-      timeoutMs,
-    );
+    const timeoutId: ReturnType<typeof setTimeout> = setTimeout(() => {
+      if (!isResolved) {
+        isResolved = true;
+        process.kill("SIGKILL");
+        reject(
+          new ExecutionError({
+            message: "Execution timeout",
+            code: "TIMEOUT_ERROR",
+          }),
+        );
+      }
+    }, timeoutMs);
 
     // Write input to process stdin
     const writer = process.stdin.getWriter();

@@ -32,8 +32,12 @@ const workerPool: Array<{
 }> = [];
 
 // Scripts get only what they need, not the server's own permissions (such as
-// --allow-run), and import only from the allowed hosts. Needs the server to
-// run with --unstable-worker-options and --allow-import.
+// --allow-run or --allow-env: Piper sends a node's Variables in the payload,
+// and the server's environment holds secrets such as DENO_AUTH_TOKENS. A
+// worker shares the server's process, so read access still exposes it as
+// /proc/self/environ until read is narrowed to the paths scripts need), and
+// import only from the allowed hosts. Needs the server to run with
+// --unstable-worker-options and --allow-import.
 function workerOptions(): WorkerOptions {
   return {
     type: "module",
@@ -42,7 +46,7 @@ function workerOptions(): WorkerOptions {
       permissions: {
         net: true,
         read: true,
-        env: true,
+        env: false,
         import: importHosts(),
       },
     },
