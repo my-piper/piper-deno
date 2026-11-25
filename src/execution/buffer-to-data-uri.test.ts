@@ -185,15 +185,23 @@ Deno.test("convertBuffersToDataUris - preserves non-plain objects", () => {
   assertEquals(result, instance); // Should return as-is
 });
 
-Deno.test("convertBuffersToDataUris - encodes a real imagescript PNG", async () => {
+Deno.test("convertBuffersToDataUris - encodes a real Sharp PNG", async () => {
   const { run } = await import("./testdata/image-script.ts");
   const rawResult = await run();
 
-  const converted = convertBuffersToDataUris(rawResult) as {
-    payload: { outputs: { image: unknown } };
+  const rawImage = rawResult.payload.outputs.image;
+  const byteLength = rawImage.byteLength;
+
+  const converted = convertBuffersToDataUris({
+    ...rawResult,
+    repeated: rawImage,
+  }) as {
+    payload: { outputs: { image: string } };
+    repeated: string;
   };
 
   const image = converted.payload.outputs.image;
-  assertEquals(typeof image, "string");
-  assertStringIncludes(image as string, "data:image/png;base64,");
+  assertStringIncludes(image, "data:image/png;base64,");
+  assertEquals(converted.repeated, image);
+  assertEquals(rawImage.byteLength, byteLength);
 });

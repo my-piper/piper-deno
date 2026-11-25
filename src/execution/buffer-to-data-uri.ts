@@ -114,12 +114,15 @@ function detectMimeType(buffer: Uint8Array): string {
  * Converts a Buffer to a data URI with base64 encoding
  */
 function bufferToDataUri(buffer: Uint8Array): string {
-  // Convert Uint8Array to base64 using Deno's standard library (fastest method)
-  // This is much faster than btoa(String.fromCharCode(...buffer)) for large buffers
-  const base64 = encodeBase64(buffer);
-
-  // Detect MIME type from buffer content
   const mimeType = detectMimeType(buffer);
+  // Use a plain view: the encoder copies via slice(), but Buffer.slice()
+  // shares storage and would let encoding detach the caller's buffer.
+  const bytes = new Uint8Array(
+    buffer.buffer,
+    buffer.byteOffset,
+    buffer.byteLength,
+  );
+  const base64 = encodeBase64(bytes);
   return `data:${mimeType};base64,${base64}`;
 }
 

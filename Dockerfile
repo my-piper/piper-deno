@@ -10,6 +10,9 @@ COPY deno.json deno.lock ./
 # Runtime source only (tests are excluded via .dockerignore)
 COPY src/ ./src/
 
+# Install native npm binaries for the target architecture before caching.
+RUN deno install --frozen
+
 # Cache dependencies for every entry point: the server and the two
 # isolation runtimes it spawns (Web Worker and child process)
 RUN deno cache --frozen src/server.ts src/execution/worker/worker.ts src/execution/process/child.ts

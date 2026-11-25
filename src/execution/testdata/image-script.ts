@@ -1,10 +1,10 @@
-import { Image } from "imagescript";
+import sharp from "sharp";
 
-export async function run(): Promise<
-  { payload: { outputs: { image: Uint8Array } } }
-> {
-  const img = new Image(100, 100);
-  img.fill(0x000000ff);
-  const image = await img.encode();
+export async function run(): Promise<{
+  payload: { outputs: { image: Uint8Array } };
+}> {
+  const image = await sharp({
+    create: { width: 100, height: 100, channels: 4, background: "black" },
+  }).png().toBuffer();
   return { payload: { outputs: { image } } };
 }

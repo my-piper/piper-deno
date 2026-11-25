@@ -506,10 +506,38 @@ In `tools/compose/compose.yaml`:
 🔒 Concurrent Requests - All isolated ✅
 ```
 
+## Image processing
+
+Scripts running in Worker isolation can import `sharp`:
+
+```ts
+import sharp from "sharp";
+
+export async function run() {
+  return await sharp({
+    create: { width: 100, height: 100, channels: 4, background: "black" },
+  }).png().toBuffer();
+}
+```
+
+Send `isolation: "none"` in the run request. The returned Buffer becomes a PNG
+`data:` URI, including when nested in an object. Sharp replaces ImageScript;
+existing scripts importing `imagescript` must migrate. Process isolation (the
+service default) does not grant the permissions Sharp needs.
+
+Run `deno task install` before starting the service. Sharp's native dependencies
+are installed into local `node_modules`; Docker installs the binaries for its
+target architecture during the build.
+
 ## 🔐 Security Notes
 
-- Workers run with minimal permissions
-- No file system access for user code
-- No network access for user code
-- Memory and CPU limits enforced by Docker
-- Each request is completely isolated
+- Worker isolation runs trusted scripts in the service process. Sharp's native
+  code operates outside Deno's permission checks and can access the process's
+  OS resources or crash the service. See [ADR 0002](docs/adr/0002-sharp-in-worker-isolation.md).
+- Workers allow network and file reads, FFI, system information, and direct
+  access to Sharp's `npm_package_config_libvips` and `MALLOC_ARENA_MAX`
+  environment variables. Other direct environment reads remain denied.
+- Process isolation keeps FFI and direct environment access disabled and denies
+  reads under `/proc`. Both modes otherwise allow network and file reads.
+- Workers share service memory. Docker limits apply to the container; V8 heap
+  limits in Process isolation do not bound native allocations.

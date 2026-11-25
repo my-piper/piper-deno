@@ -4,8 +4,9 @@
 entry function to call, the payload to pass it, and optionally a timeout and an
 isolation mode.
 
-**Script**: An untrusted JavaScript/TypeScript module supplied by the caller,
-either as source text or as a URL. It must export the entry function.
+**Script**: A JavaScript/TypeScript module supplied by the caller,
+either as source text or as a URL. It must export the entry function. Scripts
+using Worker isolation must be trusted to run with the service’s access.
 
 **Entry function** (`fn`): The exported function of the script that is invoked
 with the payload. Its return value becomes the result.

@@ -31,13 +31,11 @@ const workerPool: Array<{
   requestCount: number;
 }> = [];
 
-// Scripts get only what they need, not the server's own permissions (such as
-// --allow-run or --allow-env: Piper sends a node's Variables in the payload,
-// and the server's environment holds secrets such as DENO_AUTH_TOKENS. A
-// worker shares the server's process, so read access still exposes it as
-// /proc/self/environ until read is narrowed to the paths scripts need), and
-// import only from the allowed hosts. Needs the server to run with
-// --unstable-worker-options and --allow-import.
+// Worker isolation is for trusted scripts: Sharp's native addon shares the
+// service process and runs outside Deno's permission checks (ADR 0002).
+// Direct environment access stays limited to Sharp's runtime configuration;
+// Piper supplies a node's Variables in the payload. Import permissions need
+// --unstable-worker-options and --allow-import on the parent.
 function workerOptions(): WorkerOptions {
   return {
     type: "module",
@@ -46,7 +44,9 @@ function workerOptions(): WorkerOptions {
       permissions: {
         net: true,
         read: true,
-        env: false,
+        env: ["npm_package_config_libvips", "MALLOC_ARENA_MAX"],
+        ffi: true,
+        sys: true,
         import: importHosts(),
       },
     },
