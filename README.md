@@ -507,6 +507,20 @@ Prometheus format (see [ADR 0003](docs/adr/0003-otel-metrics-prometheus-exporter
   `invalid_request`, `internal_error`.
 - No label identifies the script.
 - Runtime gauges cover the service process only, not child processes.
+- `deno_worker_temporary_total` and `deno_worker_recycled_total` appear only
+  after their first increment.
+
+#### Dashboard
+
+[`grafana/piper-deno.json`](grafana/piper-deno.json) is a Grafana (10+)
+dashboard for these metrics: overview stats, runs by outcome and isolation,
+duration percentiles and heatmap, the worker pool, and runtime memory and
+event-loop lag. Import it through **Dashboards → New → Import** or provision
+it from a file; its uid is `piper-deno`. It expects series labelled
+`job="deno"` and `env`, as the piper-swarm vmagent scrape sets them, and picks
+the Prometheus-compatible data source through its `datasource` variable.
+"Failed runs" counts every outcome other than `success`; "Internal errors"
+counts only `internal_error`, the failures caused by the service itself.
 
 ### Docker Resource Limits
 
