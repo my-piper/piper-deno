@@ -74,7 +74,7 @@ jobs:
 
       - name: Start container
         run: |
-          docker run -d --name piper-deno -p 3333:80 piper-deno:ci
+          docker run -d --name piper-deno -p 3333:80 -p 9464:9464 piper-deno:ci
           curl --silent --output /dev/null --retry 30 --retry-delay 1 \
             --retry-all-errors http://127.0.0.1:3333
 

@@ -295,8 +295,8 @@ deno task test:e2e
 End-to-end tests require the server to be running:
 
 ```bash
-# Terminal 1: Start the server
-deno task start
+# Terminal 1: Start the server (metrics tests expect METRICS_PORT=9464)
+METRICS_PORT=9464 deno task start
 
 # Terminal 2: Run end-to-end tests
 deno task test:e2e
@@ -404,6 +404,7 @@ Expected response: `{"error":"Execution timeout"}`
 ```
 src/
   server.ts                      HTTP entry point; picks an executor per isolation mode
+  metrics.ts                     OpenTelemetry metrics and the /metrics listener
   run-code.ts                    Run request schema (zod)
   execution/
     common.ts                    ExecutionError, log levels, timeout limits
@@ -477,6 +478,35 @@ DENO_AUTH_TOKENS=<token>@registry:8085
 Both isolation modes apply the list: child processes get `--allow-import=<hosts>`
 and workers get it as their `import` permission, so the server itself runs with
 `--allow-import --unstable-worker-options`.
+
+### Metrics
+
+When `METRICS_PORT` is set (the image sets `9464`), a separate listener
+serves Prometheus metrics at `GET :METRICS_PORT/metrics`. The run port never
+serves them. Leave `METRICS_PORT` unset or empty to disable the listener.
+Metrics are recorded with the OpenTelemetry SDK and exported in the
+Prometheus format (see [ADR 0003](docs/adr/0003-otel-metrics-prometheus-exporter.md)).
+`target_info` carries `service_name="piper-deno"`.
+
+| Metric | Type | Labels |
+| --- | --- | --- |
+| `deno_runs_total` | counter | `isolation`, `outcome` |
+| `deno_run_duration_seconds` | histogram (0.01 to 300 s) | `isolation`, `outcome` |
+| `deno_runs_in_flight` | gauge | `isolation` |
+| `deno_worker_pool_workers` | gauge | `state` (`busy`, `idle`) |
+| `deno_worker_temporary_total` | counter | (none) |
+| `deno_worker_recycled_total` | counter | `reason` (`max_requests`, `timeout`, `error`) |
+| `deno_memory_rss_bytes` | gauge | (none) |
+| `deno_memory_heap_used_bytes` | gauge | (none) |
+| `deno_memory_heap_total_bytes` | gauge | (none) |
+| `deno_event_loop_lag_seconds` | gauge | (none) |
+
+- `isolation` is `process` or `worker`. Requests rejected before parsing use
+  `unknown`.
+- `outcome` is one of `success`, `script_error`, `timeout`, `memory_limit`,
+  `invalid_request`, `internal_error`.
+- No label identifies the script.
+- Runtime gauges cover the service process only, not child processes.
 
 ### Docker Resource Limits
 
