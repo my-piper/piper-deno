@@ -23,7 +23,11 @@ ENV PORT=80
 # Set default per-worker memory limit (in MB)
 ENV PER_WORKER_MEMORY_MB=128
 
+# Prometheus metrics listener (GET /metrics); unset METRICS_PORT to disable
+ENV METRICS_PORT=9464
+
 EXPOSE 80
+EXPOSE 9464
 
 # Permission flags live in deno.json ("start" task) so local runs and the
 # image cannot drift. --allow-run is needed for Process isolation;

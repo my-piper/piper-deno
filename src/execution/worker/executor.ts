@@ -7,6 +7,12 @@ import {
 import { RunCode } from "../../run-code.ts";
 import { convertBuffersToDataUris } from "../buffer-to-data-uri.ts";
 import { importHosts } from "../imports.ts";
+import {
+  observeWorkerPool,
+  recordRecycledWorker,
+  recordTemporaryWorker,
+  type RecycleReason,
+} from "../../metrics.ts";
 
 interface WorkerMessage {
   type: "execute";
@@ -30,6 +36,11 @@ const workerPool: Array<{
   busy: boolean;
   requestCount: number;
 }> = [];
+
+observeWorkerPool(() => {
+  const busy = workerPool.filter((w) => w.busy).length;
+  return { busy, idle: workerPool.length - busy };
+});
 
 // Worker isolation is for trusted scripts: Sharp's native addon shares the
 // service process and runs outside Deno's permission checks (ADR 0002).
@@ -85,18 +96,21 @@ function getOrCreateWorker(): {
     new URL("./worker.ts", import.meta.url).href,
     workerOptions(),
   ) as Worker;
+  recordTemporaryWorker();
   return { worker, shouldRecycle: true }; // Will be terminated after use
 }
 
-function releaseWorker(worker: Worker, shouldRecycle: boolean): void {
+// `recycle` names why the worker must go; undefined returns it to the pool
+function releaseWorker(worker: Worker, recycle?: RecycleReason): void {
   const poolEntry = workerPool.find((w) => w.worker === worker);
 
   if (poolEntry) {
-    if (shouldRecycle) {
+    if (recycle) {
       // Remove from pool and terminate
       const index = workerPool.indexOf(poolEntry);
       workerPool.splice(index, 1);
       worker.terminate();
+      recordRecycledWorker(recycle);
     } else {
       // Mark as idle for reuse
       poolEntry.busy = false;
@@ -128,8 +142,14 @@ export function execute(runCode: RunCode): Promise<{
     timers.timeout = setTimeout(() => {
       if (!isResolved) {
         isResolved = true;
-        releaseWorker(worker, true); // Force recycle on timeout
-        reject(new Error("Execution timeout"));
+        releaseWorker(worker, "timeout"); // Force recycle on timeout
+        // The worker is gone, so its logs cannot be recovered
+        reject(
+          new ExecutionError({
+            message: "Execution timeout",
+            code: "TIMEOUT_ERROR",
+          }),
+        );
       }
     }, timeoutMs);
 
@@ -156,7 +176,7 @@ export function execute(runCode: RunCode): Promise<{
         const convertedResult = convertBuffersToDataUris(data.result);
 
         // Release worker back to pool (or terminate if should recycle)
-        releaseWorker(worker, shouldRecycle);
+        releaseWorker(worker, shouldRecycle ? "max_requests" : undefined);
 
         resolve({
           result: convertedResult,
@@ -166,7 +186,7 @@ export function execute(runCode: RunCode): Promise<{
         const { message, stack, code, logs } = data;
 
         // On error, always recycle the worker
-        releaseWorker(worker, true);
+        releaseWorker(worker, "error");
 
         reject(
           new ExecutionError({
@@ -196,7 +216,7 @@ export function execute(runCode: RunCode): Promise<{
       worker.onerror = () => {};
 
       // On error, always recycle the worker
-      releaseWorker(worker, true);
+      releaseWorker(worker, "error");
 
       reject(new Error(`Worker error: ${error.message || "Unknown error"}`));
     };
