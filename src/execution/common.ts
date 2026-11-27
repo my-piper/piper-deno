@@ -2,7 +2,8 @@
  * Common types and utilities shared between executor implementations
  */
 
-export type LogLevel = "log" | "info" | "warn" | "error";
+// the levels Piper expects; console.log is recorded as "info"
+export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export class ExecutionError extends Error {
   code?: string;

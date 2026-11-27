@@ -36,7 +36,8 @@ try {
   // Override console to capture logs
   const originalConsole = globalThis.console;
   globalThis.console = {
-    log: (...a: unknown[]) => log("log", ...a),
+    debug: (...a: unknown[]) => log("debug", ...a),
+    log: (...a: unknown[]) => log("info", ...a),
     info: (...a: unknown[]) => log("info", ...a),
     warn: (...a: unknown[]) => log("warn", ...a),
     error: (...a: unknown[]) => log("error", ...a),

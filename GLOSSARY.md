@@ -18,7 +18,8 @@ function.
 returned as `data:` URIs.
 
 **Logs**: The console output captured from a script during one run, each entry
-with a timestamp and a level (`log`, `info`, `warn`, `error`).
+with a timestamp and a level (`debug`, `info`, `warn`, `error`; `console.log`
+is recorded as `info`).
 
 **Execution error**: A run that fails after the script started: the script
 throws, or the run is cut off by its timeout or memory limit. As opposed to an
