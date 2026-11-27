@@ -73,7 +73,7 @@ The server will be available at:
 ```json
 {
   "result": { "result": "success" },
-  "logs": [{ "ts": 1234567890, "level": "log", "message": "..." }]
+  "logs": [{ "ts": 1234567890, "level": "info", "message": "..." }]
 }
 ```
 

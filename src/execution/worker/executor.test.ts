@@ -17,7 +17,7 @@ Deno.test("executor - normal code execution", async () => {
 
   assertEquals(result.result, { message: "Hello World" });
   assertEquals(result.logs.length, 1);
-  assertEquals(result.logs[0].level, "log");
+  assertEquals(result.logs[0].level, "info");
   assertEquals(result.logs[0].message, "Hello from user code!");
 });
 
@@ -137,6 +137,7 @@ Deno.test("executor - missing function", async () => {
 Deno.test("executor - multiple console log levels", async () => {
   const script = `
     export function greet(payload) {
+      console.debug("Debug message");
       console.log("Log message");
       console.info("Info message");
       console.warn("Warning message");
@@ -151,11 +152,13 @@ Deno.test("executor - multiple console log levels", async () => {
     payload: { name: "Test" },
   });
 
-  assertEquals(result.logs.length, 4);
-  assertEquals(result.logs[0].level, "log");
-  assertEquals(result.logs[1].level, "info");
-  assertEquals(result.logs[2].level, "warn");
-  assertEquals(result.logs[3].level, "error");
+  assertEquals(result.logs.map(({ level }) => level), [
+    "debug",
+    "info",
+    "info",
+    "warn",
+    "error",
+  ]);
 });
 
 Deno.test("executor - custom timeout in request", async () => {
